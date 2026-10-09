@@ -16,6 +16,7 @@ def list_instances(region_name=None):
                     "id": instance["InstanceId"],
                     "state": instance["State"]["Name"],
                     "type": instance["InstanceType"],
+                    "public_ip": instance.get("PublicIpAddress"),
                 }
             )
 
