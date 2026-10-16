@@ -1,4 +1,3 @@
-
 name: CI
 
 on:
@@ -37,3 +36,19 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t aws-infrastructure-guardian .
+
+  terraform-validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Initialize Terraform
+        run: terraform -chdir=terraform init -backend=false
+
+      - name: Validate Terraform
+        run: terraform -chdir=terraform validate
