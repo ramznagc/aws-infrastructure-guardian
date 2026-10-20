@@ -12,7 +12,7 @@ provider "aws" {
 
 locals {
   common_tags = {
-    Project     = "AWS Infrastructure Guardian"
+    Project     = var.project_name
     Environment = var.environment
     ManagedBy   = "Terraform"
   }
