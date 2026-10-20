@@ -15,3 +15,9 @@ variable "environment" {
     error_message = "Environment must be dev, staging, or prod."
   }
 }
+
+variable "project_name" {
+  description = "Name of the project used for resource tagging"
+  type        = string
+  default     = "AWS Infrastructure Guardian"
+}
