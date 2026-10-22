@@ -1,3 +1,7 @@
+
+import pytest
+
+from src.security.finding import SecurityFinding
 from src.security.scanner import scan_ec2_instances
 
 
@@ -29,6 +33,7 @@ def test_instance_without_public_ip_has_no_finding():
 
     assert findings == []
 
+
 def test_instance_without_public_ip_key_has_no_finding():
     instances = [
         {
@@ -39,6 +44,7 @@ def test_instance_without_public_ip_key_has_no_finding():
     findings = scan_ec2_instances(instances)
 
     assert findings == []
+
 
 def test_multiple_instances_are_scanned_independently():
     instances = [
@@ -63,3 +69,44 @@ def test_multiple_instances_are_scanned_independently():
         "i-public",
         "i-public-2",
     ]
+
+
+def test_severity_is_normalized_to_uppercase():
+    finding = SecurityFinding(
+        resource_id="i-123",
+        issue="Public IP assigned",
+        severity="medium",
+        description="Test finding",
+    )
+
+    assert finding.severity == "MEDIUM"
+
+
+def test_invalid_severity_raises_value_error():
+    with pytest.raises(ValueError, match="Invalid severity"):
+        SecurityFinding(
+            resource_id="i-123",
+            issue="Public IP assigned",
+            severity="URGENT",
+            description="Test finding",
+        )
+
+
+def test_empty_resource_id_raises_value_error():
+    with pytest.raises(ValueError, match="resource_id cannot be empty"):
+        SecurityFinding(
+            resource_id=" ",
+            issue="Public IP assigned",
+            severity="MEDIUM",
+            description="Test finding",
+        )
+
+
+def test_empty_issue_raises_value_error():
+    with pytest.raises(ValueError, match="issue cannot be empty"):
+        SecurityFinding(
+            resource_id="i-123",
+            issue=" ",
+            severity="MEDIUM",
+            description="Test finding",
+        )
