@@ -28,3 +28,38 @@ def test_instance_without_public_ip_has_no_finding():
     findings = scan_ec2_instances(instances)
 
     assert findings == []
+
+def test_instance_without_public_ip_key_has_no_finding():
+    instances = [
+        {
+            "id": "i-1122334455",
+        }
+    ]
+
+    findings = scan_ec2_instances(instances)
+
+    assert findings == []
+
+def test_multiple_instances_are_scanned_independently():
+    instances = [
+        {
+            "id": "i-public",
+            "public_ip": "203.0.113.10",
+        },
+        {
+            "id": "i-private",
+            "public_ip": None,
+        },
+        {
+            "id": "i-public-2",
+            "public_ip": "203.0.113.20",
+        },
+    ]
+
+    findings = scan_ec2_instances(instances)
+
+    assert len(findings) == 2
+    assert [finding.resource_id for finding in findings] == [
+        "i-public",
+        "i-public-2",
+    ]
