@@ -22,20 +22,28 @@ def scan_security_groups(security_groups):
             elif protocol != "-1":
                 continue
 
-            for ip_range in permission.get("IpRanges", []):
-                if ip_range.get("CidrIp") == "0.0.0.0/0":
-                    findings.append(
-                        SecurityFinding(
-                            resource_id=group_id,
-                            issue="SSH open to the internet",
-                            severity="HIGH",
-                            description=(
-                                "Security group allows SSH or unrestricted "
-                                "protocol access from 0.0.0.0/0. "
-                                "Review and restrict inbound access."
-                            ),
-                        )
+            ipv4_open = any(
+                ip_range.get("CidrIp") == "0.0.0.0/0"
+                for ip_range in permission.get("IpRanges", [])
+            )
+
+            ipv6_open = any(
+                ip_range.get("CidrIpv6") == "::/0"
+                for ip_range in permission.get("Ipv6Ranges", [])
+            )
+
+            if ipv4_open or ipv6_open:
+                findings.append(
+                    SecurityFinding(
+                        resource_id=group_id,
+                        issue="SSH open to the internet",
+                        severity="HIGH",
+                        description=(
+                            "Security group allows SSH or unrestricted "
+                            "protocol access from all IPv4 or IPv6 addresses. "
+                            "Review and restrict inbound access."
+                        ),
                     )
-                    break
+                )
 
     return findings
