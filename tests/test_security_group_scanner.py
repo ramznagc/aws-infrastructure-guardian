@@ -1,4 +1,3 @@
-
 from src.security.security_group_scanner import scan_security_groups
 
 
@@ -99,3 +98,43 @@ def test_detects_all_protocols_open_to_internet():
     assert len(findings) == 1
     assert findings[0].resource_id == "sg-all-protocols"
     assert findings[0].severity == "HIGH"
+
+
+def test_detects_ssh_open_to_all_ipv6_addresses():
+    security_groups = [
+        {
+            "GroupId": "sg-ipv6-ssh",
+            "IpPermissions": [
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": 22,
+                    "ToPort": 22,
+                    "Ipv6Ranges": [{"CidrIpv6": "::/0"}],
+                }
+            ],
+        }
+    ]
+
+    findings = scan_security_groups(security_groups)
+
+    assert len(findings) == 1
+    assert findings[0].resource_id == "sg-ipv6-ssh"
+    assert findings[0].severity == "HIGH"
+
+
+def test_ignores_ssh_restricted_to_specific_ipv6_range():
+    security_groups = [
+        {
+            "GroupId": "sg-restricted-ipv6",
+            "IpPermissions": [
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": 22,
+                    "ToPort": 22,
+                    "Ipv6Ranges": [{"CidrIpv6": "2001:db8::/64"}],
+                }
+            ],
+        }
+    ]
+
+    assert scan_security_groups(security_groups) == []
