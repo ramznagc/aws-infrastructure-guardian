@@ -138,3 +138,30 @@ def test_ignores_ssh_restricted_to_specific_ipv6_range():
     ]
 
     assert scan_security_groups(security_groups) == []
+
+
+def test_reports_only_one_finding_per_security_group():
+    security_groups = [
+        {
+            "GroupId": "sg-duplicate",
+            "IpPermissions": [
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": 22,
+                    "ToPort": 22,
+                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}],
+                },
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": 22,
+                    "ToPort": 22,
+                    "Ipv6Ranges": [{"CidrIpv6": "::/0"}],
+                },
+            ],
+        }
+    ]
+
+    findings = scan_security_groups(security_groups)
+
+    assert len(findings) == 1
+    assert findings[0].resource_id == "sg-duplicate"
