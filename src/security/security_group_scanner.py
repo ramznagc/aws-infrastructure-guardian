@@ -1,4 +1,3 @@
-
 from src.security.finding import SecurityFinding
 
 
@@ -7,6 +6,7 @@ def scan_security_groups(security_groups):
 
     for security_group in security_groups:
         group_id = security_group.get("GroupId", "unknown")
+        group_has_finding = False
 
         for permission in security_group.get("IpPermissions", []):
             protocol = permission.get("IpProtocol")
@@ -45,5 +45,10 @@ def scan_security_groups(security_groups):
                         ),
                     )
                 )
+                group_has_finding = True
+                break
+
+        if group_has_finding:
+            continue
 
     return findings
