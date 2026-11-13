@@ -137,10 +137,14 @@ def test_get_user_security_details():
     mock_paginator = MagicMock()
     mock_iam.get_paginator.return_value = mock_paginator
     mock_paginator.paginate.side_effect = [
-        {
-            "AttachedPolicies": [{"PolicyName": "ReadOnlyAccess"}]
-        },
-        {"PolicyNames": ["CustomBillingRead"]},
+        [
+            {
+                "AttachedPolicies": [
+                    {"PolicyName": "ReadOnlyAccess"}
+                ]
+            }
+        ],
+        [{"PolicyNames": ["CustomBillingRead"]}],
     ]
 
     mock_iam.list_access_keys.return_value = {
