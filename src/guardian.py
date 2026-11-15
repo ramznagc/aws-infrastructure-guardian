@@ -1,8 +1,10 @@
 
 from src.aws.s3 import scan_bucket_security
 from src.aws.ebs import scan_ebs_security
+from src.aws.rds import scan_rds_security
 from src.security.s3_scanner import scan_s3_buckets
 from src.security.ebs_scanner import scan_ebs_resources
+from src.security.rds_scanner import scan_rds_instances
 from src.security.iam_scanner import scan_iam_security
 from src.reporting.summary import build_report
 from src.reporting.json_report import write_json_report
@@ -35,6 +37,17 @@ def main():
     print(f"EBS volumes scanned: {len(ebs_resources['Volumes'])}")
     print(f"EBS snapshots scanned: {len(ebs_resources['Snapshots'])}")
     print(f"EBS security findings: {len(ebs_findings)}")
+
+    # RDS Security Scan
+    print("\nScanning RDS DB instances...")
+
+    rds_instances = scan_rds_security()
+    rds_findings = scan_rds_instances(rds_instances)
+
+    all_findings.extend(rds_findings)
+
+    print(f"RDS instances scanned: {len(rds_instances)}")
+    print(f"RDS security findings: {len(rds_findings)}")
 
     # IAM Security Scan
     print("\nScanning IAM users...")
