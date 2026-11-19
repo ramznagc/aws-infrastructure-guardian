@@ -19,7 +19,7 @@ The implementation currently includes work on:
   - Publicly shared snapshots
   - Snapshot permissions that could not be verified
 - **S3 security**
-  - S3 discovery and security scanning modules are part of the project; review the scanner implementation for the exact checks currently enabled.
+  - S3 bucket discovery and security scanning are integrated into the guardian workflow. See `src/security/s3_scanner.py` and its tests for the current rule details.
 
 Findings are represented with resource identifiers, issue descriptions and severity levels, then combined by the guardian entry point. The EBS scanner assigns high severity to missing encryption and critical severity to public snapshots; permission checks that cannot be verified are surfaced as medium severity.
 
@@ -67,7 +67,7 @@ AWS Account
 └── requirements.txt
 ```
 
-The exact modules evolve as new checks are added. Consult the source tree for the current implementation.
+The source tree and tests show the current implementation. The CI workflow is available in `.github/workflows/ci.yml`.
 
 ## Run locally
 
@@ -99,7 +99,11 @@ The exact modules evolve as new checks are added. Consult the source tree for th
 
 4. Configure AWS credentials using a secure local profile, environment or an attached IAM role. Do not put access keys in source code or commit them.
 
-5. Run the project entry point using the command and module path currently present in the repository. Check the source tree before running if the entry point has changed.
+5. Run the guardian entry point from the repository root:
+
+   \`\`\`bash
+   python -m src.guardian
+   \`\`\`
 
 ## Tests
 
