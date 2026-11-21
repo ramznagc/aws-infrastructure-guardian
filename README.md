@@ -1,80 +1,125 @@
 # AWS Infrastructure Guardian
 
-AWS infrastructure security, compliance, and monitoring automation platform built with Python and Boto3.
+A Python and Boto3 learning project for discovering AWS resources and identifying selected infrastructure security risks. The repository contains AWS access modules, security scanners, finding/reporting components, Terraform material, a Dockerfile and automated tests.
 
-## Project Goal
+> **Project status:** This is an evolving portfolio project. The README describes capabilities present in the repository and commit history; it is not a claim of a certified compliance product or production security service.
 
-AWS environments can contain many EC2 instances, S3 buckets, Lambda functions, IAM users, and CloudWatch alarms.
+## Current security checks
 
-AWS Infrastructure Guardian is designed to provide a centralized way to:
+- **IAM user security**
+  - Users without MFA
+  - High-privilege managed policies such as `AdministratorAccess` and `PowerUserAccess`
+  - Directly attached and inline policies requiring review
+  - Active access keys older than 90 days
+- **EBS security**
+  - Unencrypted EBS volumes and snapshots
+  - Publicly shared snapshots
+  - Snapshot permissions that could not be verified
+- **S3 security**
+  - S3 bucket discovery and security scanning
+- **RDS security**
+  - Publicly accessible database instances
+  - Storage encryption disabled
+  - Automated backup retention below 7 days
+  - Deletion protection disabled
+- **EC2 security groups**
+  - SSH (TCP/22) exposed to all IPv4 or IPv6 addresses
+  - Unrestricted protocol access exposed to all IPv4 or IPv6 addresses
 
-- Discover AWS resources
-- Analyze infrastructure security
-- Check compliance requirements
-- Detect missing resource tags
-- Generate infrastructure reports
-- Monitor AWS environments
-- Automate security and operational checks
+Findings include resource identifiers, issue descriptions and severity levels, then flow into the consolidated Guardian report. The EBS scanner assigns high severity to missing encryption and critical severity to public snapshots. The RDS scanner assigns critical severity to publicly accessible databases and high severity to missing storage encryption. Internet-exposed SSH or unrestricted security-group rules are reported as high severity.
 
-## Planned Architecture
+## Architecture
 
 ```text
-Developer
-   |
-   v
-GitHub
-   |
-   v
-GitHub Actions
-   |
-   v
-AWS Infrastructure Guardian
-   |
-   +---- Boto3
-   |
-   +---- Security Scanner
-   |
-   +---- Compliance Engine
-   |
-   +---- Report Generator
-   |
-   v
 AWS Account
    |
-   +---- EC2
-   +---- S3
-   +---- Lambda
-   +---- IAM
-   +---- CloudWatch
-
-## RDS Security Scanner (Day 18)
-
-The RDS scanner discovers DB instances and reports these configuration risks:
-
-| Check | Finding severity |
-|---|---|
-| Publicly accessible DB instance | CRITICAL |
-| Storage encryption disabled | HIGH |
-| Automated backup retention below 7 days | MEDIUM |
-| Deletion protection disabled | MEDIUM |
-
-### How it works
-
-The AWS discovery layer uses the RDS `describe_db_instances` paginator to collect DB instance metadata. The security scanner evaluates each instance and adds findings to the consolidated Guardian report.
-
-### Run the scanner
-
-Run the project entry point using your configured AWS credentials and default region:
-
-```bash
-python -m src.guardian
+   +-- Boto3 discovery
+   |      +-- IAM
+   |      +-- EC2 security groups
+   |      +-- EBS volumes / snapshots
+   |      +-- S3 buckets
+   |      +-- RDS DB instances
+   |
+   +-- Security scanners
+   |      +-- IAM / EC2 security groups
+   |      +-- EBS / S3 / RDS
+   |
+   +-- Consolidated findings
+   +-- Summary and JSON reporting
 ```
 
-The scanner performs read-only discovery; it does not create, modify, or delete AWS resources. Unit tests use mocked AWS clients, so they do not require a live AWS account.
+## Technology
 
-### Recommended baseline
+- Python and Boto3 / Botocore
+- Pytest-style unit tests with mocked AWS clients
+- Docker
+- Terraform material in `terraform/`
+- GitHub Actions CI
 
-- Keep production databases private and restrict inbound access to trusted application networks.
-- Enable encryption at rest.
-- Configure automated backup retention for at least 7 days.
-- Enable deletion protection for production databases.
+## Run locally
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ramznagc/aws-infrastructure-guardian.git
+   cd aws-infrastructure-guardian
+   ```
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
+   On Windows PowerShell: `\.venv\Scripts\Activate.ps1`
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Configure AWS credentials using a secure local profile, environment or attached IAM role. Never put access keys in source code or commit them.
+5. Run the Guardian:
+   ```bash
+   python -m src.guardian
+   ```
+
+## Tests
+
+Run the test suite with:
+
+```bash
+pytest
+```
+
+AWS API calls in unit tests are mocked. The scanner is read-only: it discovers configuration and does not create, modify or delete AWS resources.
+
+## Security principles
+
+- Prefer IAM roles and least-privilege permissions.
+- Do not commit AWS access keys, secret values, local environment files or Terraform state.
+- Treat access-denied responses as incomplete visibility, not proof that a resource is safe.
+- Review findings before making remediation changes.
+- Run scans only against accounts where you have explicit authorization.
+
+## Day 18 — RDS security scanner
+
+The RDS discovery layer uses the `describe_db_instances` paginator. Checks cover public accessibility (CRITICAL), disabled storage encryption (HIGH), backup retention below 7 days (MEDIUM), and disabled deletion protection (MEDIUM).
+
+## Day 19 — EC2 security-group scanner integration
+
+The EC2 discovery layer now retrieves security groups with the `describe_security_groups` paginator, so inventories spanning multiple API pages are included. The Guardian runs the existing security-group scanner and adds its findings to the consolidated report.
+
+| Check | Severity |
+|---|---|
+| SSH exposed to `0.0.0.0/0` or `::/0` | HIGH |
+| All protocols exposed to `0.0.0.0/0` or `::/0` | HIGH |
+
+Rules limited to specific IPv4/IPv6 ranges are not flagged by these checks. The scanner is read-only; it does not change security-group rules or provision AWS resources. Unit tests mock the EC2 client and do not require live AWS credentials.
+
+## Roadmap
+
+- Add clear CLI options for regions and output paths.
+- Improve structured JSON/HTML reports.
+- Add coverage reporting.
+- Add integration tests in an isolated AWS test account.
+- Document the IAM permissions required for each scanner.
+
+## Author
+
+Ramazan Agac · [GitHub](https://github.com/ramznagc)
