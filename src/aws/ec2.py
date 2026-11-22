@@ -2,23 +2,23 @@ from .session import get_session
 
 
 def list_instances(region_name=None):
+    """Discover EC2 instances across every page of the API response."""
     session = get_session(region_name)
     ec2 = session.client("ec2")
-
-    response = ec2.describe_instances()
+    paginator = ec2.get_paginator("describe_instances")
 
     instances = []
-
-    for reservation in response["Reservations"]:
-        for instance in reservation["Instances"]:
-            instances.append(
-                {
-                    "id": instance["InstanceId"],
-                    "state": instance["State"]["Name"],
-                    "type": instance["InstanceType"],
-                    "public_ip": instance.get("PublicIpAddress"),
-                }
-            )
+    for page in paginator.paginate():
+        for reservation in page.get("Reservations", []):
+            for instance in reservation.get("Instances", []):
+                instances.append(
+                    {
+                        "id": instance["InstanceId"],
+                        "state": instance["State"]["Name"],
+                        "type": instance["InstanceType"],
+                        "public_ip": instance.get("PublicIpAddress"),
+                    }
+                )
 
     return instances
 
