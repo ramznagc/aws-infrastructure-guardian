@@ -22,11 +22,13 @@ A Python and Boto3 learning project for discovering AWS resources and identifyin
   - Storage encryption disabled
   - Automated backup retention below 7 days
   - Deletion protection disabled
+- **EC2 instance security**
+  - Instances with a public IPv4 address (MEDIUM)
 - **EC2 security groups**
-  - SSH (TCP/22) exposed to all IPv4 or IPv6 addresses
-  - Unrestricted protocol access exposed to all IPv4 or IPv6 addresses
+  - SSH (TCP/22) exposed to all IPv4 or IPv6 addresses (HIGH)
+  - Unrestricted protocol access exposed to all IPv4 or IPv6 addresses (HIGH)
 
-Findings include resource identifiers, issue descriptions and severity levels, then flow into the consolidated Guardian report. The EBS scanner assigns high severity to missing encryption and critical severity to public snapshots. The RDS scanner assigns critical severity to publicly accessible databases and high severity to missing storage encryption. Internet-exposed SSH or unrestricted security-group rules are reported as high severity.
+Findings include resource identifiers, issue descriptions and severity levels, then flow into the consolidated Guardian report. A public IP is a network-exposure signal, not proof that an instance is reachable: effective reachability also depends on subnet routing, security groups and network ACLs.
 
 ## Architecture
 
@@ -35,15 +37,12 @@ AWS Account
    |
    +-- Boto3 discovery
    |      +-- IAM
-   |      +-- EC2 security groups
+   |      +-- EC2 instances / security groups
    |      +-- EBS volumes / snapshots
    |      +-- S3 buckets
    |      +-- RDS DB instances
    |
    +-- Security scanners
-   |      +-- IAM / EC2 security groups
-   |      +-- EBS / S3 / RDS
-   |
    +-- Consolidated findings
    +-- Summary and JSON reporting
 ```
@@ -103,14 +102,13 @@ The RDS discovery layer uses the `describe_db_instances` paginator. Checks cover
 
 ## Day 19 — EC2 security-group scanner integration
 
-The EC2 discovery layer now retrieves security groups with the `describe_security_groups` paginator, so inventories spanning multiple API pages are included. The Guardian runs the existing security-group scanner and adds its findings to the consolidated report.
+The EC2 discovery layer retrieves security groups with the `describe_security_groups` paginator. The Guardian reports SSH exposed to `0.0.0.0/0` or `::/0`, and unrestricted protocol rules exposed to those ranges (HIGH).
 
-| Check | Severity |
-|---|---|
-| SSH exposed to `0.0.0.0/0` or `::/0` | HIGH |
-| All protocols exposed to `0.0.0.0/0` or `::/0` | HIGH |
+## Day 20 — EC2 instance security scanner integration
 
-Rules limited to specific IPv4/IPv6 ranges are not flagged by these checks. The scanner is read-only; it does not change security-group rules or provision AWS resources. Unit tests mock the EC2 client and do not require live AWS credentials.
+EC2 instance discovery now uses the `describe_instances` paginator to collect instances across all response pages. The existing EC2 instance scanner is integrated into the Guardian report and flags instances with a public IPv4 address (MEDIUM).
+
+A public IP alone does not establish that an instance is reachable from the internet; subnet routes, security-group rules and network ACLs also determine effective reachability. This check is intended as an inventory signal for review, not a definitive exposure verdict. Tests use mocked EC2 clients and do not require live AWS credentials.
 
 ## Roadmap
 

@@ -1,11 +1,12 @@
 from src.aws.s3 import scan_bucket_security
 from src.aws.ebs import scan_ebs_security
 from src.aws.rds import scan_rds_security
-from src.aws.ec2 import list_security_groups
+from src.aws.ec2 import list_instances, list_security_groups
 from src.security.s3_scanner import scan_s3_buckets
 from src.security.ebs_scanner import scan_ebs_resources
 from src.security.rds_scanner import scan_rds_instances
 from src.security.iam_scanner import scan_iam_security
+from src.security.scanner import scan_ec2_instances
 from src.security.security_group_scanner import scan_security_groups
 from src.reporting.summary import build_report
 from src.reporting.json_report import write_json_report
@@ -40,6 +41,14 @@ def main():
     all_findings.extend(rds_findings)
     print(f"RDS instances scanned: {len(rds_instances)}")
     print(f"RDS security findings: {len(rds_findings)}")
+
+    # EC2 Instance Scan
+    print("\nScanning EC2 instances...")
+    ec2_instances = list_instances()
+    ec2_instance_findings = scan_ec2_instances(ec2_instances)
+    all_findings.extend(ec2_instance_findings)
+    print(f"EC2 instances scanned: {len(ec2_instances)}")
+    print(f"EC2 instance findings: {len(ec2_instance_findings)}")
 
     # EC2 Security Group Scan
     print("\nScanning EC2 security groups...")
