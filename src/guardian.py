@@ -6,7 +6,7 @@ from src.security.s3_scanner import scan_s3_buckets
 from src.security.ebs_scanner import scan_ebs_resources
 from src.security.rds_scanner import scan_rds_instances
 from src.security.iam_scanner import scan_iam_security
-from src.security.scanner import scan_ec2_instances
+from src.security.scanner import scan_ec2_instances, scan_ec2_metadata_options
 from src.security.security_group_scanner import scan_security_groups
 from src.reporting.summary import build_report
 from src.reporting.json_report import write_json_report
@@ -49,6 +49,12 @@ def main():
     all_findings.extend(ec2_instance_findings)
     print(f"EC2 instances scanned: {len(ec2_instances)}")
     print(f"EC2 instance findings: {len(ec2_instance_findings)}")
+
+    # EC2 Instance Metadata Scan
+    print("\nChecking EC2 Instance Metadata Service settings...")
+    metadata_findings = scan_ec2_metadata_options(ec2_instances)
+    all_findings.extend(metadata_findings)
+    print(f"IMDSv2 configuration findings: {len(metadata_findings)}")
 
     # EC2 Security Group Scan
     print("\nScanning EC2 security groups...")

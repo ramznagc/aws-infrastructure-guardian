@@ -24,6 +24,7 @@ A Python and Boto3 learning project for discovering AWS resources and identifyin
   - Deletion protection disabled
 - **EC2 instance security**
   - Instances with a public IPv4 address (MEDIUM)
+  - Instances that allow IMDSv1 because IMDSv2 is not enforced (HIGH)
 - **EC2 security groups**
   - SSH (TCP/22) exposed to all IPv4 or IPv6 addresses (HIGH)
   - Unrestricted protocol access exposed to all IPv4 or IPv6 addresses (HIGH)
@@ -106,9 +107,15 @@ The EC2 discovery layer retrieves security groups with the `describe_security_gr
 
 ## Day 20 — EC2 instance security scanner integration
 
-EC2 instance discovery now uses the `describe_instances` paginator to collect instances across all response pages. The existing EC2 instance scanner is integrated into the Guardian report and flags instances with a public IPv4 address (MEDIUM).
+EC2 instance discovery uses the `describe_instances` paginator to collect instances across all response pages. The Guardian flags instances with a public IPv4 address (MEDIUM).
 
-A public IP alone does not establish that an instance is reachable from the internet; subnet routes, security-group rules and network ACLs also determine effective reachability. This check is intended as an inventory signal for review, not a definitive exposure verdict. Tests use mocked EC2 clients and do not require live AWS credentials.
+A public IP alone does not establish that an instance is reachable from the internet; subnet routes, security-group rules and network ACLs also determine effective reachability. This check is an inventory signal for review, not a definitive exposure verdict.
+
+## Day 21 — EC2 Instance Metadata Service security
+
+EC2 discovery now captures the instance metadata `HttpTokens` setting. The Guardian reports instances where the value is `optional`, meaning IMDSv1 is permitted and IMDSv2 is not enforced (HIGH). Instances configured with `required` are not flagged. Missing metadata settings are treated as unknown rather than assumed vulnerable.
+
+This is a read-only configuration check. Tests use mocked EC2 clients and do not require live AWS credentials.
 
 ## Roadmap
 
