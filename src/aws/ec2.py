@@ -2,7 +2,7 @@ from .session import get_session
 
 
 def list_instances(region_name=None):
-    """Discover EC2 instances across every page of the API response."""
+    """Discover EC2 instances and selected security metadata across all pages."""
     session = get_session(region_name)
     ec2 = session.client("ec2")
     paginator = ec2.get_paginator("describe_instances")
@@ -11,12 +11,14 @@ def list_instances(region_name=None):
     for page in paginator.paginate():
         for reservation in page.get("Reservations", []):
             for instance in reservation.get("Instances", []):
+                metadata_options = instance.get("MetadataOptions") or {}
                 instances.append(
                     {
                         "id": instance["InstanceId"],
                         "state": instance["State"]["Name"],
                         "type": instance["InstanceType"],
                         "public_ip": instance.get("PublicIpAddress"),
+                        "metadata_http_tokens": metadata_options.get("HttpTokens"),
                     }
                 )
 
