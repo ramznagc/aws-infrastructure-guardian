@@ -2,12 +2,14 @@ from src.aws.s3 import scan_bucket_security
 from src.aws.ebs import scan_ebs_security
 from src.aws.rds import scan_rds_security
 from src.aws.ec2 import list_instances, list_security_groups
+from src.aws.vpc import scan_vpc_flow_logs as discover_vpc_flow_logs
 from src.security.s3_scanner import scan_s3_buckets
 from src.security.ebs_scanner import scan_ebs_resources
 from src.security.rds_scanner import scan_rds_instances
 from src.security.iam_scanner import scan_iam_security
 from src.security.scanner import scan_ec2_instances, scan_ec2_metadata_options
 from src.security.security_group_scanner import scan_security_groups
+from src.security.vpc_scanner import scan_vpc_flow_logs
 from src.reporting.summary import build_report
 from src.reporting.json_report import write_json_report
 
@@ -63,6 +65,14 @@ def main():
     all_findings.extend(security_group_findings)
     print(f"Security groups scanned: {len(security_groups)}")
     print(f"Security group findings: {len(security_group_findings)}")
+
+    # VPC Flow Logs Scan
+    print("\nChecking VPC Flow Logs coverage...")
+    vpc_resources = discover_vpc_flow_logs()
+    vpc_findings = scan_vpc_flow_logs(vpc_resources)
+    all_findings.extend(vpc_findings)
+    print(f"VPCs scanned: {len(vpc_resources['Vpcs'])}")
+    print(f"VPC Flow Logs findings: {len(vpc_findings)}")
 
     # IAM Security Scan
     print("\nScanning IAM users...")
