@@ -28,6 +28,8 @@ A Python and Boto3 learning project for discovering AWS resources and identifyin
 - **EC2 security groups**
   - SSH (TCP/22) exposed to all IPv4 or IPv6 addresses (HIGH)
   - Unrestricted protocol access exposed to all IPv4 or IPv6 addresses (HIGH)
+- **VPC network visibility**
+  - VPCs without an active Flow Log delivering records successfully (MEDIUM)
 
 Findings include resource identifiers, issue descriptions and severity levels, then flow into the consolidated Guardian report. A public IP is a network-exposure signal, not proof that an instance is reachable: effective reachability also depends on subnet routing, security groups and network ACLs.
 
@@ -39,6 +41,7 @@ AWS Account
    +-- Boto3 discovery
    |      +-- IAM
    |      +-- EC2 instances / security groups
+   |      +-- VPCs / Flow Logs
    |      +-- EBS volumes / snapshots
    |      +-- S3 buckets
    |      +-- RDS DB instances
@@ -113,9 +116,13 @@ A public IP alone does not establish that an instance is reachable from the inte
 
 ## Day 21 — EC2 Instance Metadata Service security
 
-EC2 discovery now captures the instance metadata `HttpTokens` setting. The Guardian reports instances where the value is `optional`, meaning IMDSv1 is permitted and IMDSv2 is not enforced (HIGH). Instances configured with `required` are not flagged. Missing metadata settings are treated as unknown rather than assumed vulnerable.
+EC2 discovery captures the instance metadata `HttpTokens` setting. The Guardian reports instances where the value is `optional`, meaning IMDSv1 is permitted and IMDSv2 is not enforced (HIGH). Instances configured with `required` are not flagged. Missing metadata settings are treated as unknown rather than assumed vulnerable.
 
-This is a read-only configuration check. Tests use mocked EC2 clients and do not require live AWS credentials.
+## Day 22 — VPC Flow Logs coverage
+
+The VPC discovery layer uses paginated `describe_vpcs` and `describe_flow_logs` calls. Each discovered VPC is checked for at least one Flow Log whose status is `ACTIVE` and delivery status is `SUCCESS`. VPCs without a healthy Flow Log are reported as MEDIUM because network traffic visibility may be incomplete.
+
+This check evaluates Flow Log configuration and delivery status only; it does not inspect log contents or create Flow Logs. Unit tests mock EC2 clients and require no live AWS credentials.
 
 ## Roadmap
 
